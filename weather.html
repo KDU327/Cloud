@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="EUC-KR">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>날씨와 온도 선 그래프</title>
+    <!-- 차트를 그리기 위한 라이브러리인 Chart.js를 불러옵니다. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div id="weather-info">
+    <h2>날씨와 온도</h2>
+    <p id="temperature"></p>
+    <canvas id="temperature-chart" width="400" height="200"></canvas>
+</div>
+
+<script>
+    const apiKey = '710cbb13898723ada445fc9909f0e14e';
+    const city = 'Seoul';  // 원하는 도시로 변경 가능
+    const apiUrl = `http://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+
+    async function getWeather() {
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+
+            if (response.ok) {
+                // 데이터에서 온도 추출
+                const temperatures = data.list.map(item => item.main.temp);
+                displayTemperature(temperatures);
+
+                // 차트 그리기
+                drawTemperatureChart(temperatures);
+            } else {
+                console.error(`날씨 정보를 가져오는데 실패하였습니다. 상태 코드: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('에러 발생:', error);
+        }
+    }
+
+    function displayTemperature(temperatures) {
+        const averageTemperature = calculateAverageTemperature(temperatures);
+        document.getElementById('temperature').innerText = `평균 온도: ${averageTemperature}°C`;
+    }
+
+    function calculateAverageTemperature(temperatures) {
+        if (temperatures.length === 0) return 0;
+        const sum = temperatures.reduce((acc, temp) => acc + temp, 0);
+        return (sum / temperatures.length).toFixed(2);
+    }
+
+    function drawTemperatureChart(temperatures) {
+        const ctx = document.getElementById('temperature-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({ length: temperatures.length }, (_, i) => i + 1),
+                datasets: [{
+                    label: '온도',
+                    data: temperatures,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '온도 (°C)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '시간'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 페이지 로드 후 날씨 정보 가져오기
+    window.addEventListener('load', getWeather);
+</script>
+
+</body>
+</html>
